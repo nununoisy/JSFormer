@@ -2,6 +2,8 @@ import React from 'react';
 
 import { useDropzone } from 'react-dropzone';
 
+import uploadImage from './upload.svg';
+
 export default function ImageUpload(props) {
     const { onChange } = props;
 
@@ -16,7 +18,7 @@ export default function ImageUpload(props) {
         <div {...getRootProps()} className="uploadContainer">
             <input {...getInputProps()} />
             <div className="uploadDisplayContainer">
-                <img src="/static/upload.svg"/>
+                <img src={uploadImage} />
                 { isDragActive ?
                     <p>Drop the image here!</p> :
                     <p>Drag an image here or click to select...</p>
