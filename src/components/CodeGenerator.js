@@ -40,8 +40,8 @@ export default function CodeGenerator(props) {
         const { palette, imageData, w, h, colorDepth } = imageMetadata;
 
         let newCode = [
-            '/** Generated with JSReformer',
-            '  * https://github.com/nununoisy/JSReformer',
+            '/** Generated with JSFormer',
+            '  * https://github.com/nununoisy/JSFormer',
             '  *',
             `  * Image: ${prefix}`,
             `  * ${w}x${h}@${colorDepth}bpp (${2**colorDepth} colors)`,
