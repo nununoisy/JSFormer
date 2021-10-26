@@ -86,9 +86,14 @@ code {
     overflow: auto;
     display: flex;
     flex-direction: column;
+    align-self: center;
 }
 
-.reformer canvas, .reformer img, .reformer a {
+.reformer canvas {
+    align-self: flex-start;
+}
+
+.reformer img, .reformer a {
     align-self: center;
 }
 
@@ -100,8 +105,20 @@ label input, label select {
     width: 50px;
 }
 
-.paletteImage {
+.paletteGrid {
     border: 1px solid black;
+    align-self: center;
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+}
+
+.paletteGrid.paletteGrid2Color {
+    grid-template-columns: 1fr 1fr;
+}
+
+.paletteGridItem {
+    height: 8px;
+    width: 8px;
 }
 
 .codeGeneratorContainer {

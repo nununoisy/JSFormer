@@ -1,27 +1,18 @@
 import React from 'react';
 
+import * as Comlink from 'comlink';
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import Worker from 'worker-loader!./Worker';
+
 import hljs from 'highlight.js/lib/core';
 import C from 'highlight.js/lib/languages/c';
 
 hljs.registerLanguage('c', C);
 
-const generateHexArray = (array, hexLength, cols) => {
-    let result = '    ';
-    for (let i = 0; i < array.length; ++i) {
-        const value = array[i];
-
-        result += '0x' + Number(value).toString(16).padStart(hexLength, '0') + ',';
-        if ((i + 1) % cols === 0) {
-            result += '\n    ';
-        }
-    }
-
-    return result.replace(/\n {4}$/,'').replace(/,$/,'');
-}
-
 export default function CodeGenerator(props) {
     const { imageMetadata } = props;
 
+    const [generating, setGenerating] = React.useState(false);
     const [prefix, setPrefix] = React.useState('image');
     const [code, setCode] = React.useState('// Upload an image');
     const [highlightedCode, setHighlightedCode] = React.useState(
@@ -30,49 +21,21 @@ export default function CodeGenerator(props) {
     const [codeStyle, setCodeStyle] = React.useState("knr");
     const [copied, setCopied] = React.useState(false);
 
-    React.useEffect(async () => {
-        console.log(imageMetadata);
-        if (imageMetadata === null) {
-            setCode('// Upload an image');
-            return;
+    React.useEffect(() => {
+        setGenerating(true);
+
+        const worker = new Worker();
+        const { GenerateCode } = Comlink.wrap(worker);
+
+        GenerateCode(imageMetadata, prefix, codeStyle).then(({code, highlightedCode}) => {
+            setCode(code);
+            setHighlightedCode(highlightedCode);
+            setGenerating(false);
+        });
+
+        return () => {
+            worker.terminate();
         }
-
-        const { palette, imageData, w, h, colorDepth } = imageMetadata;
-
-        let newCode = [
-            '/** Generated with JSFormer',
-            '  * https://github.com/nununoisy/JSFormer',
-            '  *',
-            `  * Image name: ${prefix}`,
-            `  * ${w}x${h}@${colorDepth}bpp (${2**colorDepth} colors)`,
-            `  */`,
-            '',
-            '#include <ti/grlib/grlib.h>',
-            '// Change this include as needed if it doesn\'t work',
-            '',
-            `static const uint8_t pixel_${prefix}${colorDepth}BPP_UNCOMP[] =${codeStyle === 'allman' ? '\n': ' '}{`,
-            generateHexArray(imageData, 2, 8),
-            '};',
-            '',
-            `static const uint32_t palette_${prefix}${colorDepth}BPP_UNCOMP[] =${codeStyle === 'allman' ? '\n': ' '}{`,
-            generateHexArray(palette, 6, 4),
-            '};',
-            '',
-            `const Graphics_Image ${prefix}${colorDepth}BPP_UNCOMP =${codeStyle === 'allman' ? '\n': ' '}{`,
-            `    IMAGE_FMT_${colorDepth}BPP_UNCOMP,`,
-            `    ${w},`,
-            `    ${h},`,
-            `    ${2**colorDepth},`,
-            `    palette_${prefix}${colorDepth}BPP_UNCOMP,`,
-            `    pixel_${prefix}${colorDepth}BPP_UNCOMP`,
-            '};',
-            '',
-            `// extern const Graphics_Image ${prefix}${colorDepth}BPP_UNCOMP;`,
-            '// Use the above line in the source file where you reference the image.'
-        ].join('\n');
-
-        setCode(newCode);
-        setHighlightedCode(hljs.highlight(newCode, { language: 'c' }).value);
     }, [imageMetadata, prefix, codeStyle]);
 
     React.useEffect(() => {
@@ -102,21 +65,27 @@ export default function CodeGenerator(props) {
                     <option value="allman">Allman (brackets on next line)</option>
                 </select>
             </label>
-            <button
-                onClick={() => {
-                    navigator.clipboard.writeText(code)
-                        .then(() => setCopied(true))
-                        .catch((e) => console.log("Copy failed", e));
-                }}
-            >
-                {copied ? 'Copied!' : 'Copy to clipboard'}
-            </button>
-            <pre className="hljs">
-                <code
-                    className="language-c"
-                    dangerouslySetInnerHTML={{ __html : highlightedCode }}
-                />
-            </pre>
+            { generating ? (
+                <p>Generating...</p>
+            ) : (
+                <>
+                    <button
+                        onClick={() => {
+                            navigator.clipboard.writeText(code)
+                                .then(() => setCopied(true))
+                                .catch((e) => console.log("Copy failed", e));
+                        }}
+                    >
+                        {copied ? 'Copied!' : 'Copy to clipboard'}
+                    </button>
+                    <pre className="hljs">
+                        <code
+                            className="language-c"
+                            dangerouslySetInnerHTML={{ __html : highlightedCode }}
+                        />
+                    </pre>
+                </>
+            )}
         </div>
     )
 }
