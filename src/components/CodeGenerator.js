@@ -22,7 +22,7 @@ const generateHexArray = (array, hexLength, cols) => {
 export default function CodeGenerator(props) {
     const { imageMetadata } = props;
 
-    const [prefix, setPrefix] = React.useState('tamagotchiegg');
+    const [prefix, setPrefix] = React.useState('image');
     const [code, setCode] = React.useState('// Upload an image');
     const [highlightedCode, setHighlightedCode] = React.useState(
         hljs.highlight('// Upload an image', { language: 'c' }).value
@@ -43,10 +43,13 @@ export default function CodeGenerator(props) {
             '/** Generated with JSFormer',
             '  * https://github.com/nununoisy/JSFormer',
             '  *',
-            `  * Image: ${prefix}`,
+            `  * Image name: ${prefix}`,
             `  * ${w}x${h}@${colorDepth}bpp (${2**colorDepth} colors)`,
             `  */`,
-            '', '',
+            '',
+            '#include <ti/grlib/grlib.h>',
+            '// Change this include as needed if it doesn\'t work',
+            '',
             `static const uint8_t pixel_${prefix}${colorDepth}BPP_UNCOMP[] =${codeStyle === 'allman' ? '\n': ' '}{`,
             generateHexArray(imageData, 2, 8),
             '};',
@@ -63,7 +66,9 @@ export default function CodeGenerator(props) {
             `    palette_${prefix}${colorDepth}BPP_UNCOMP,`,
             `    pixel_${prefix}${colorDepth}BPP_UNCOMP`,
             '};',
-            ''
+            '',
+            `// extern const Graphics_Image ${prefix}${colorDepth}BPP_UNCOMP;`,
+            '// Use the above line in the source file where you reference the image.'
         ].join('\n');
 
         setCode(newCode);
